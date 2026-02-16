@@ -1,0 +1,49 @@
+# Agent Prompt Template
+
+Use this structure to write clear, effective prompts for AI coding agents.
+
+---
+
+## Task
+
+[One sentence describing what you want done.]
+
+Example: "Refactor the `process_order` function to separate validation from business logic."
+
+## Context
+
+[Background the agent needs to make good decisions. Include: what the code does, why the change is needed, and any relevant history.]
+
+Example: "This function handles order processing in our e-commerce API. It currently mixes input validation, price calculation, and database writes. We need to add discount rules next sprint, and the current structure makes that difficult."
+
+## Scope
+
+[Specific files, functions, or areas to focus on. Explicitly list what's in and out of scope.]
+
+Example:
+- In scope: `src/orders/process.py`, `src/orders/validators.py`
+- Out of scope: `src/orders/models.py` (schema changes are a separate task)
+
+## Constraints
+
+[What the agent must NOT do. Prevents common failure modes.]
+
+Example:
+- Do not change function signatures in `__init__.py` (other modules import from there)
+- Do not add new dependencies
+- Keep all functions under 30 lines
+
+## Expected Output
+
+[How you want the result delivered. Asking for a plan before code prevents large unwanted diffs.]
+
+Example: "Show me your refactoring plan first — list which functions you'll create, move, or modify. Wait for my approval before writing code."
+
+---
+
+## Usage Tips
+
+1. **Fill in every section.** Skipping "Constraints" is the most common source of unwanted AI output.
+2. **Be concrete.** "Refactor for readability" is vague. "Split the 80-line function into 3 functions under 25 lines each" is actionable.
+3. **Include file paths.** The agent can read them for context, reducing misunderstandings.
+4. **Ask for a plan first** for any change touching more than one file.

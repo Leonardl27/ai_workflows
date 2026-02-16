@@ -1,0 +1,48 @@
+# CLAUDE.md — [Project Name]
+
+## Project Overview
+
+[1-2 sentences: what the project does, who uses it, key technologies.]
+
+## Role
+
+You are a [role — e.g., "senior Python backend engineer"]. Prioritize [top 2-3 priorities — e.g., "correctness, security, and test coverage"].
+
+## Tech Stack
+
+- [Language and version]
+- [Framework]
+- [Database / storage]
+- [Testing tools]
+
+## Code Style
+
+- [Convention 1 — e.g., "Use type hints on all function signatures"]
+- [Convention 2 — e.g., "Follow the repository pattern in src/repositories/"]
+- [Convention 3 — e.g., "Keep functions under 25 lines"]
+
+## Testing
+
+- [Where tests live — e.g., "Integration tests in tests/api/, unit tests in tests/unit/"]
+- [How to run them — e.g., "pytest with --cov flag"]
+- [Minimum coverage expectations]
+
+## Constraints
+
+- [What the agent must NOT do — e.g., "Do not add new dependencies without discussion"]
+- [Safety rails — e.g., "Do not modify database migrations after they've been committed"]
+- [Scope limits — e.g., "Do not refactor code outside the current task's scope"]
+
+## Common Tasks
+
+### [Task 1 — e.g., "Adding a new API endpoint"]
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+### [Task 2 — e.g., "Fixing a bug"]
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]

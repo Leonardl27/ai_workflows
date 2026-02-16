@@ -1,0 +1,95 @@
+# AI-Powered Code Review — GitHub Actions Workflow
+#
+# Triggers on pull requests and posts an AI-generated review comment.
+# Uses the Anthropic API to analyze the PR diff.
+#
+# Setup:
+#   1. Add ANTHROPIC_API_KEY to your repo's GitHub Secrets
+#   2. Copy this file to .github/workflows/ai-code-review.yml
+#   3. Adjust the review prompt below to match your project's priorities
+
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    # Skip AI review for trivial changes
+    paths-ignore:
+      - "*.md"
+      - ".gitignore"
+      - "LICENSE"
+
+# Limit permissions to the minimum needed
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    # Skip drafts and dependabot PRs
+    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for accurate diffs
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          # Get the diff between the PR branch and the base branch
+          DIFF=$(git diff origin/${{ github.event.pull_request.base.ref }}...HEAD)
+
+          # Truncate large diffs to stay within context limits
+          MAX_CHARS=8000
+          if [ ${#DIFF} -gt $MAX_CHARS ]; then
+            DIFF="${DIFF:0:$MAX_CHARS}
+
+          ... [diff truncated — showing first $MAX_CHARS characters]"
+          fi
+
+          # Write to file to avoid shell escaping issues
+          echo "$DIFF" > /tmp/pr_diff.txt
+
+      - name: Run AI review
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          DIFF=$(cat /tmp/pr_diff.txt)
+
+          # Structure the review prompt — see Pattern 01 for why this structure works
+          REVIEW=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -n \
+              --arg diff "$DIFF" \
+              --arg title "${{ github.event.pull_request.title }}" \
+              '{
+                model: "claude-sonnet-4-5-20250929",
+                max_tokens: 1024,
+                messages: [{
+                  role: "user",
+                  content: ("You are a senior engineer reviewing a pull request.\n\nPR Title: " + $title + "\n\nDiff:\n```\n" + $diff + "\n```\n\nReview this PR for:\n1. Bugs or logic errors\n2. Security issues (injection, auth, data exposure)\n3. Error handling gaps\n4. Performance concerns\n\nFormat your response as:\n## Summary\nOne sentence on what the PR does.\n\n## Issues Found\nBulleted list of issues, each with severity (critical/warning/note) and the relevant file:line.\n\n## Looks Good\nBriefly note what the PR does well.\n\nIf you find no issues, say so — do not invent problems.")
+                }]
+              }')" \
+          | jq -r '.content[0].text')
+
+          # Write review to file for the comment step
+          echo "$REVIEW" > /tmp/review.txt
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVIEW=$(cat /tmp/review.txt)
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "### AI Code Review
+
+          $REVIEW
+
+          ---
+          *Automated review by AI — see [Pattern 03](../../patterns/03-automation-workflows/) for how this works.*"
